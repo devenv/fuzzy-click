@@ -63,7 +63,7 @@ def test_string_option_with_default(fzf):
     fuzzy = FuzzyClick(cli, fzf=fzf)
     choices = fuzzy.choose()
 
-    assert_same_callbacks(fuzzy.commands, [cli])
+    assert_same_callbacks(fuzzy.commands, [cli, cli])
     assert_same_callbacks(choices, [cli])
 
 
@@ -79,8 +79,9 @@ def test_boolean_flag(fzf, default):
     fuzzy = FuzzyClick(cli, fzf=fzf)
     choices = fuzzy.choose()
 
-    assert_same_callbacks(fuzzy.commands, [cli])
-    assert_same_callbacks(choices, [cli])
+    assert_same_callbacks(fuzzy.commands, [cli, cli])
+    assert_same_fuzzies(fuzzy.commands, ["cli help -f True", "cli help -f False"])
+    assert_same_fuzzies(choices, [f"cli help -f {str(default)}"])
 
 
 def test_choice_option(fzf):
@@ -94,9 +95,9 @@ def test_choice_option(fzf):
     fuzzy = FuzzyClick(cli, fzf=fzf)
     choices = fuzzy.choose()
 
-    assert_same_callbacks(fuzzy.commands, [cli, cli, cli, cli])
+    assert_same_callbacks(fuzzy.commands, [cli, cli, cli])
+    assert_same_fuzzies(fuzzy.commands, ["cli help -m foo", "cli help -m bar", "cli help -m baz"])
     assert_same_callbacks(choices, [cli])
-    assert_same_fuzzies(fuzzy.commands, ["cli help -m <input>", "cli help -m foo", "cli help -m bar", "cli help -m baz"])
 
 
 def assert_same_callbacks(commands1: list[Command], commands2: list[Command]):

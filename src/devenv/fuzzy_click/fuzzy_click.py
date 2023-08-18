@@ -2,6 +2,7 @@ from itertools import product
 from typing import Iterator, Optional
 
 from click import Choice, Command, Group, Option, Parameter
+from click.types import BoolParamType, StringParamType
 from pyfzf import FzfPrompt
 
 from .utils import to_fuzzy
@@ -45,19 +46,17 @@ class FuzzyClick:
 
     def _explode_param(self, param: Parameter) -> Iterator[Parameter]:
         if isinstance(param, Option):
-            for option in self._explode_option(param):
-                yield option
+            if issubclass(param.type.__class__, BoolParamType):
+                yield Option(param_decls=param.opts, type=param.type, default=True)
+                yield Option(param_decls=param.opts, type=param.type, default=False)
+
+            if issubclass(param.type.__class__, StringParamType):
+                yield Option(param_decls=param.opts, type=param.type, default=None)
+                yield Option(param_decls=param.opts, type=param.type, default=param.default)
+
+            if issubclass(param.type.__class__, Choice):
+                choices = param.type.choices  # type: ignore
+                for choice in choices:
+                    yield Option(param_decls=param.opts, type=param.type, default=choice)
         else:
             raise NotImplementedError
-
-    def _explode_option(self, param: Option) -> Iterator[Option]:
-        yield Option(param_decls=param.opts, type=param.type, default=param.default)
-
-        if param.type is bool:
-            yield Option(param_decls=param.opts, type=param.type, default=True)
-            yield Option(param_decls=param.opts, type=param.type, default=False)
-
-        if issubclass(param.type.__class__, Choice):
-            choices = param.type.choices  # type: ignore
-            for choice in choices:
-                yield Option(param_decls=param.opts, type=param.type, default=choice)

@@ -11,7 +11,7 @@ setup(
     description="FZF integration for Click",
     author="devenv",
     author_email="boris.churzin@gmail.com",
-    url="https://github.com/devenv/fuzzy-click",
+    url="git@github.com:devenv/fuzzy-click.git",
     packages=find_packages("src"),
     package_dir={"": "src"},
     py_modules=[splitext(basename(path))[0] for path in glob("src/*.py")],
