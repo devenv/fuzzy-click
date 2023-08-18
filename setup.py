@@ -6,7 +6,7 @@ from os.path import basename, splitext
 from setuptools import find_packages, setup
 
 setup(
-    name="devenv.fuzzy-click",
+    name="devenv.fuzzy_click",
     version="1.0.0",
     description="FZF integration for Click",
     author="devenv",
@@ -14,13 +14,10 @@ setup(
     url="https://github.com/devenv/fuzzy-click",
     packages=find_packages("src"),
     package_dir={"": "src"},
-    scripts=[],
     py_modules=[splitext(basename(path))[0] for path in glob("src/*.py")],
     include_package_data=True,
     zip_safe=False,
     classifiers=[
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
     ],
@@ -29,6 +26,7 @@ setup(
         "click~=8.0",
         "click-plugins~=1.1.1",
         "click-command-tree~=1.1.0",
+        "pyfzf~=0.3.1",
     ],
     extras_require={
         "dev": [

@@ -1,0 +1,11 @@
+graft src
+graft tests
+
+include .flake8
+include tox.ini
+include README.md
+
+global-exclude *.py[cod]
+global-exclude __pycache__/*
+global-exclude .tox/**/*
+global-exclude venv/**/*
