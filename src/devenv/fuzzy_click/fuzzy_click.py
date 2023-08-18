@@ -15,7 +15,7 @@ class FuzzyClick:
 
     def choose(self) -> list[Command]:
         fuzzy_to_commands = {to_fuzzy(command): command for command in self.commands}
-        choices = self.fzf.prompt(fuzzy_to_commands.keys(), "Choose a command: ")
+        choices = self.fzf.prompt(choices=fuzzy_to_commands.keys())
 
         for choice in choices:
             if choice not in fuzzy_to_commands:
@@ -27,8 +27,7 @@ class FuzzyClick:
         if isinstance(command, Group):
             for subcommand in command.commands.values():
                 yield from self._traverse(subcommand)
-
-        if isinstance(command, Command):
+        elif isinstance(command, Command):
             yield from self._explode(command)
 
     def _explode(self, command: Command) -> Iterator[Command]:
@@ -51,10 +50,12 @@ class FuzzyClick:
                 yield Option(param_decls=param.opts, type=param.type, default=False)
 
             if issubclass(param.type.__class__, StringParamType):
-                yield Option(param_decls=param.opts, type=param.type, default=None)
+                yield Option(param_decls=param.opts, type=param.type, default="<input>")
                 yield Option(param_decls=param.opts, type=param.type, default=param.default)
 
             if issubclass(param.type.__class__, Choice):
+                if not param.required:
+                    yield Option(param_decls=param.opts, type=param.type, default="<none>")
                 choices = param.type.choices  # type: ignore
                 for choice in choices:
                     yield Option(param_decls=param.opts, type=param.type, default=choice)

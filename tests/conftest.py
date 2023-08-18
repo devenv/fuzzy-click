@@ -7,8 +7,8 @@ def fzf():
         prompted = []
         returns = []
 
-        def prompt(self, options: list[str], _: str):
-            self.prompted.extend(options)
+        def prompt(self, choices: list[str]):
+            self.prompted.extend(choices)
             return self.returns
 
         def should_return(self, choices: list[str]):

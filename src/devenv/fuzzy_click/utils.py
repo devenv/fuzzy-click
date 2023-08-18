@@ -2,7 +2,7 @@ from click import Command, Parameter
 
 
 def to_fuzzy(command: Command) -> str:
-    help = command.get_short_help_str()
+    help = command.get_short_help_str(limit=160)
     params = [describe_param(param) for param in command.params]
     return f"{help} {' '.join(params)}".strip()
 

@@ -43,13 +43,13 @@ def test_basic_group(fzf):
     def subcommand():
         pass
 
-    fzf.should_return(["cli help", "subcommand help"])
+    fzf.should_return(["subcommand help"])
 
     fuzzy = FuzzyClick(cli, fzf=fzf)
     choices = fuzzy.choose()
 
-    assert_same_callbacks(fuzzy.commands, [subcommand, cli])
-    assert_same_callbacks(choices, [cli, subcommand])
+    assert_same_callbacks(fuzzy.commands, [subcommand])
+    assert_same_callbacks(choices, [subcommand])
 
 
 def test_string_option_with_default(fzf):
