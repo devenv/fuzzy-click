@@ -1,23 +1,63 @@
-from typing import Optional
-from click import Command, Group
+from itertools import product
+from typing import Iterator, Optional
+
+from click import Choice, Command, Group, Option, Parameter
 from pyfzf import FzfPrompt
+
+from .utils import to_fuzzy
 
 
 class FuzzyClick:
     def __init__(self, root: Command, fzf: Optional[FzfPrompt] = None):
         self.fzf = fzf or FzfPrompt()
-        self.fuzzy_to_commands = self._traverse(root)
+        self.commands: list[Command] = list(self._traverse(root))
 
     def choose(self) -> list[Command]:
-        fuzzy_options = list(self.fuzzy_to_commands.keys())
-        choices = self.fzf.prompt(fuzzy_options, "Choose a command: ")
-        return [self.fuzzy_to_commands[choice] for choice in choices]
+        fuzzy_to_commands = {to_fuzzy(command): command for command in self.commands}
+        choices = self.fzf.prompt(fuzzy_to_commands.keys(), "Choose a command: ")
 
-    def _traverse(self, command: Command) -> dict[str, Command]:
+        for choice in choices:
+            if choice not in fuzzy_to_commands:
+                raise ValueError(f"Invalid choice: {choice}, expected one of {fuzzy_to_commands.keys()}")
+
+        return [fuzzy_to_commands[choice] for choice in choices]
+
+    def _traverse(self, command: Command) -> Iterator[Command]:
         if isinstance(command, Group):
-            subcommands = {}
             for subcommand in command.commands.values():
-                subcommands.update(self._traverse(subcommand))
-            return {command.get_short_help_str(): command, **subcommands}
+                yield from self._traverse(subcommand)
+
+        if isinstance(command, Command):
+            yield from self._explode(command)
+
+    def _explode(self, command: Command) -> Iterator[Command]:
+        exploded_params: list[list[Parameter]] = list(list(self._explode_param(param)) for param in command.params)
+        combos: list[list[Parameter]] = list(product(*exploded_params))
+        for combo in combos:
+            combo: list[Parameter] = list(combo)
+            yield Command(
+                command.name,
+                help=command.help,
+                params=combo,
+                callback=command.callback,
+                context_settings=command.context_settings,
+            )
+
+    def _explode_param(self, param: Parameter) -> Iterator[Parameter]:
+        if isinstance(param, Option):
+            for option in self._explode_option(param):
+                yield option
         else:
-            return {command.get_short_help_str(): command}
+            raise NotImplementedError
+
+    def _explode_option(self, param: Option) -> Iterator[Option]:
+        yield Option(param_decls=param.opts, type=param.type, default=param.default)
+
+        if param.type is bool:
+            yield Option(param_decls=param.opts, type=param.type, default=True)
+            yield Option(param_decls=param.opts, type=param.type, default=False)
+
+        if issubclass(param.type.__class__, Choice):
+            choices = param.type.choices  # type: ignore
+            for choice in choices:
+                yield Option(param_decls=param.opts, type=param.type, default=choice)
