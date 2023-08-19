@@ -4,7 +4,7 @@
 
 Given a click root command `FuzzyClick(root).choose()` will generate all the permutation of commands and their parameters, and show `fzf` to choose one (or multiple).
 
-If a command permutation that was chosen has a string parameter - a text input will be shown (WIP).
+If a command permutation that was chosen has a string parameter - a text input will be shown.
 
 ## Demo
 

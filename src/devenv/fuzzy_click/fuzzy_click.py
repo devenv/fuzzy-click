@@ -1,16 +1,17 @@
 from itertools import product
-from typing import Iterator, Optional
+from typing import Callable, Iterator, Optional
 
-from click import Choice, Command, Context, Group, Option, Parameter
+from click import Choice, Command, Context, Group, Option, Parameter, prompt
 from click.types import BoolParamType, StringParamType
 from pyfzf import FzfPrompt
 
-from .utils import to_fuzzy
+from .utils import describe_param, to_fuzzy
 
 
 class FuzzyClick:
-    def __init__(self, root: Command, fzf: Optional[FzfPrompt] = None):
+    def __init__(self, root: Command, fzf: Optional[FzfPrompt] = None, input_function: Optional[Callable] = None):
         self.fzf = fzf or FzfPrompt()
+        self.input_function = input_function or prompt
         self.root = root
         self.commands: list[Command] = list(self._traverse(root))
 
@@ -22,7 +23,18 @@ class FuzzyClick:
             if choice not in fuzzy_to_commands:
                 raise ValueError(f"Invalid choice: {choice}, expected one of {fuzzy_to_commands.keys()}")
 
-        self.root.parse_args(ctx, [])
+        has_params = False
+        for choice in choices:
+            command = fuzzy_to_commands[choice]
+            for param in command.params:
+                has_params = True
+                if param.default == "<none>":
+                    param.default = None
+                if param.default == "<input>":
+                    param.default = self.input_function(describe_param(param))
+
+        if has_params:
+            self.root.parse_args(ctx, [])
 
         return [fuzzy_to_commands[choice] for choice in choices]
 
@@ -48,13 +60,14 @@ class FuzzyClick:
 
     def _explode_param(self, param: Parameter) -> Iterator[Parameter]:
         if isinstance(param, Option):
-            if issubclass(param.type.__class__, BoolParamType):
+            if issubclass(param.type.__class__, BoolParamType) or param.type.__class__ == bool:
                 yield Option(param_decls=param.opts, type=param.type, default=True)
                 yield Option(param_decls=param.opts, type=param.type, default=False)
 
-            if issubclass(param.type.__class__, StringParamType):
+            if issubclass(param.type.__class__, StringParamType) or param.type.__class__ == str:
                 yield Option(param_decls=param.opts, type=param.type, default="<input>")
-                yield Option(param_decls=param.opts, type=param.type, default=param.default)
+                if param.default:
+                    yield Option(param_decls=param.opts, type=param.type, default=param.default)
 
             if issubclass(param.type.__class__, Choice):
                 if not param.required:

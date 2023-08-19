@@ -100,6 +100,24 @@ def test_choice_option(fzf):
     assert_same_callbacks(choices, [cli])
 
 
+def test_input_missing(fzf, input_function):
+    @click.command("cli", help="cli help")
+    @click.option("-m", type=str)
+    def cli(_):
+        pass
+
+    fzf.should_return(["cli help -m <input>"])
+    input_function.should_return("some value")
+
+    fuzzy = FuzzyClick(cli, fzf=fzf, input_function=input_function)
+    choices = fuzzy.choose(Context(cli, resilient_parsing=True))
+
+    assert_same_fuzzies(fuzzy.commands, ["cli help -m some value"])
+    assert_same_callbacks(fuzzy.commands, [cli])
+    assert_same_fuzzies(choices, ["cli help -m some value"])
+    assert_same_callbacks(choices, [cli])
+
+
 def assert_same_callbacks(commands1: list[Command], commands2: list[Command]):
     for c1, c2 in zip(commands1, commands2):
         assert_same_callback(c1, c2)
