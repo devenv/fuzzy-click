@@ -20,7 +20,7 @@ def cmd():
 def sub():
     pass
 
-FuzzyClick(cmd).choose()
+FuzzyClick(cmd).choose(ctx)
 ```
 
 will show fzf and return a list of commands that you can `command.invoke()`.

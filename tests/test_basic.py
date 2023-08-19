@@ -1,6 +1,6 @@
 import click
 import pytest
-from click.core import Command
+from click.core import Command, Context
 
 from devenv.fuzzy_click.fuzzy_click import FuzzyClick
 from devenv.fuzzy_click.utils import to_fuzzy
@@ -14,7 +14,7 @@ def test_basic_functionality(fzf):
     fzf.should_return(["cli help"])
 
     fuzzy = FuzzyClick(cli, fzf=fzf)
-    choices = fuzzy.choose()
+    choices = fuzzy.choose(Context(cli, resilient_parsing=True))
 
     assert_same_callbacks(fuzzy.commands, [cli])
     assert_same_callbacks(choices, [cli])
@@ -28,7 +28,7 @@ def test_basic_functionality__nothing_chosen(fzf):
     fzf.should_return([])
 
     fuzzy = FuzzyClick(cli, fzf=fzf)
-    choices = fuzzy.choose()
+    choices = fuzzy.choose(Context(cli, resilient_parsing=True))
 
     assert_same_callbacks(fuzzy.commands, [cli])
     assert_same_callbacks(choices, [])
@@ -46,7 +46,7 @@ def test_basic_group(fzf):
     fzf.should_return(["subcommand help"])
 
     fuzzy = FuzzyClick(cli, fzf=fzf)
-    choices = fuzzy.choose()
+    choices = fuzzy.choose(Context(cli, resilient_parsing=True))
 
     assert_same_callbacks(fuzzy.commands, [subcommand])
     assert_same_callbacks(choices, [subcommand])
@@ -61,7 +61,7 @@ def test_string_option_with_default(fzf):
     fzf.should_return(["cli help -s some value"])
 
     fuzzy = FuzzyClick(cli, fzf=fzf)
-    choices = fuzzy.choose()
+    choices = fuzzy.choose(Context(cli, resilient_parsing=True))
 
     assert_same_callbacks(fuzzy.commands, [cli, cli])
     assert_same_callbacks(choices, [cli])
@@ -77,7 +77,7 @@ def test_boolean_flag(fzf, default):
     fzf.should_return([f"cli help -f {str(default)}"])
 
     fuzzy = FuzzyClick(cli, fzf=fzf)
-    choices = fuzzy.choose()
+    choices = fuzzy.choose(Context(cli, resilient_parsing=True))
 
     assert_same_callbacks(fuzzy.commands, [cli, cli])
     assert_same_fuzzies(fuzzy.commands, ["cli help -f True", "cli help -f False"])
@@ -93,15 +93,14 @@ def test_choice_option(fzf):
     fzf.should_return(["cli help -m foo"])
 
     fuzzy = FuzzyClick(cli, fzf=fzf)
-    choices = fuzzy.choose()
+    choices = fuzzy.choose(Context(cli, resilient_parsing=True))
 
+    assert_same_fuzzies(fuzzy.commands, ["cli help -m <none>", "cli help -m foo", "cli help -m bar", "cli help -m baz"])
     assert_same_callbacks(fuzzy.commands, [cli, cli, cli])
-    assert_same_fuzzies(fuzzy.commands, ["cli help -m foo", "cli help -m bar", "cli help -m baz"])
     assert_same_callbacks(choices, [cli])
 
 
 def assert_same_callbacks(commands1: list[Command], commands2: list[Command]):
-    assert len(commands1) == len(commands2)
     for c1, c2 in zip(commands1, commands2):
         assert_same_callback(c1, c2)
 
@@ -111,7 +110,6 @@ def assert_same_callback(command1: Command, command2: Command):
 
 
 def assert_same_fuzzies(commands: list[Command], fuzzies: list[str]):
-    assert len(commands) == len(fuzzies)
     assert [to_fuzzy(c) for c in commands] == fuzzies
 
 

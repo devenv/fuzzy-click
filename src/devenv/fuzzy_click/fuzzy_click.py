@@ -1,7 +1,7 @@
 from itertools import product
 from typing import Iterator, Optional
 
-from click import Choice, Command, Group, Option, Parameter
+from click import Choice, Command, Context, Group, Option, Parameter
 from click.types import BoolParamType, StringParamType
 from pyfzf import FzfPrompt
 
@@ -11,15 +11,18 @@ from .utils import to_fuzzy
 class FuzzyClick:
     def __init__(self, root: Command, fzf: Optional[FzfPrompt] = None):
         self.fzf = fzf or FzfPrompt()
+        self.root = root
         self.commands: list[Command] = list(self._traverse(root))
 
-    def choose(self) -> list[Command]:
+    def choose(self, ctx: Context) -> list[Command]:
         fuzzy_to_commands = {to_fuzzy(command): command for command in self.commands}
         choices = self.fzf.prompt(choices=fuzzy_to_commands.keys())
 
         for choice in choices:
             if choice not in fuzzy_to_commands:
                 raise ValueError(f"Invalid choice: {choice}, expected one of {fuzzy_to_commands.keys()}")
+
+        self.root.parse_args(ctx, [])
 
         return [fuzzy_to_commands[choice] for choice in choices]
 
