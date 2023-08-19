@@ -34,6 +34,7 @@ class FuzzyClick:
                     param.default = self.input_function(describe_param(param))
 
         if has_params:
+            ctx.resilient_parsing = True
             self.root.parse_args(ctx, [])
 
         return [fuzzy_to_commands[choice] for choice in choices]

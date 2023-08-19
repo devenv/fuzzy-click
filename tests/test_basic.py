@@ -102,7 +102,7 @@ def test_choice_option(fzf):
 
 def test_input_missing(fzf, input_function):
     @click.command("cli", help="cli help")
-    @click.option("-m", type=str)
+    @click.option("-m", type=str, default="default")
     def cli(_):
         pass
 
@@ -112,7 +112,7 @@ def test_input_missing(fzf, input_function):
     fuzzy = FuzzyClick(cli, fzf=fzf, input_function=input_function)
     choices = fuzzy.choose(Context(cli, resilient_parsing=True))
 
-    assert_same_fuzzies(fuzzy.commands, ["cli help -m some value"])
+    assert_same_fuzzies(fuzzy.commands, ["cli help -m some value", "cli help -m default"])
     assert_same_callbacks(fuzzy.commands, [cli])
     assert_same_fuzzies(choices, ["cli help -m some value"])
     assert_same_callbacks(choices, [cli])
